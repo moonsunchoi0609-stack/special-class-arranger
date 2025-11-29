@@ -719,6 +719,8 @@ function App() {
         analysisResult={aiAnalysis}
         students={students}
         tags={tags}
+        onReanalyze={handleAIAnalyze}
+        isLoading={isAnalyzing}
       />
 
       {/* Student Add/Edit Modal */}

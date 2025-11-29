@@ -67,7 +67,7 @@ export const analyzeClasses = async (
         items: {
           type: Type.OBJECT,
           properties: {
-            title: { type: Type.STRING, description: "제안 제목 (예: 제안1: 1반과 2반 성비 조정 트레이드)" },
+            title: { type: Type.STRING, description: "제안 제목 (예: 1반과 2반 성비 조정 트레이드)" },
             movements: {
               type: Type.ARRAY,
               items: {
@@ -86,7 +86,8 @@ export const analyzeClasses = async (
             predictedScore: { type: Type.NUMBER, description: "이 제안 하나를 적용했을 때의 예상 균형 점수 (0~100)" }
           },
           required: ["title", "movements", "reason", "expectedEffect", "predictedScore"]
-        }
+        },
+        description: "현재 상태에서 가장 효과적인 최적의 제안 1개만 포함 (여러 개 제안 금지)"
       },
       currentScore: { type: Type.NUMBER, description: "현재 상태의 종합 점수 (0~100)" },
       predictedScore: { type: Type.NUMBER, description: "모든 제안 적용 시 예상되는 최적 종합 점수 (0~100)" }
@@ -130,6 +131,7 @@ export const analyzeClasses = async (
 
     **작성 가이드:**
     1. **suggestions**: 
+       - 전체 균형을 개선할 수 있는 **가장 효과적인 단 하나의 제안(1개)**만 작성하세요. 여러 선택지를 제공하지 마세요.
        - 단순 이동뿐만 아니라, **맞교환(Trade)**이 효과적이라면 적극 제안하세요. (예: 1반의 A학생을 2반으로 보내고, 2반의 B학생을 1반으로 데려옴)
        - 하나의 제안(item) 내에 관련된 모든 학생의 이동(movements)을 배열로 포함시키세요.
        - 각 제안별로 그 제안만 수행했을 때의 예상 점수(predictedScore)를 계산하여 포함하세요.
