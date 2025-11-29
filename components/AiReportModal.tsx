@@ -1,7 +1,12 @@
 import React from 'react';
 import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, User, Star, Activity, ThumbsUp } from 'lucide-react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,ZS, ResponsiveContainer 
+import {
+  ResponsiveContainer,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+  CartesianGrid,
+  Tooltip,
 } from 'recharts';
 import { AiAnalysisResult, Student, TagDefinition } from '../types';
 
