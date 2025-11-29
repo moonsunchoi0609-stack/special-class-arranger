@@ -37,32 +37,31 @@ const SimulationView: React.FC<{
   // Logic to calculate simulated state
   const { simulatedStudents, movedStudentIds } = useMemo(() => {
     const movedIds = new Set<string>();
-    const mapping = new Map<string, string>(); // studentId -> targetClassId
-
-    movements.forEach(m => {
-        // Normalize class ID (e.g., "1반" -> "1")
-        const targetId = m.targetClass.replace(/[^0-9]/g, '');
-        
-        // Use ID if available, otherwise fall back to name mapping
-        if (m.studentId) {
-            mapping.set(m.studentId, targetId);
-        } else {
-            mapping.set(m.studentName, targetId);
-        }
-    });
 
     const newStudents = students.map(s => {
       // 1. Check ID match (Primary)
-      if (mapping.has(s.id)) {
-        movedIds.add(s.id);
-        return { ...s, assignedClassId: mapping.get(s.id)! };
-      }
+      let move = movements.find(m => m.studentId === s.id);
       
-      // 2. Check Masked Name match (Fallback for legacy)
-      const masked = maskName(s.name);
-      if (mapping.has(masked)) {
+      // 2. Check Masked Name + Current Class match (Secondary)
+      if (!move) {
+         const masked = maskName(s.name);
+         move = movements.find(m => {
+            const moveCurrentClassId = m.currentClass.replace(/[^0-9]/g, '');
+            // Check if name matches AND if the move's "from" class matches student's current class
+            return m.studentName === masked && moveCurrentClassId === s.assignedClassId;
+         });
+      }
+
+      // 3. Fallback: Name only match (Legacy/Last resort)
+      if (!move) {
+         const masked = maskName(s.name);
+         move = movements.find(m => m.studentName === masked);
+      }
+
+      if (move) {
         movedIds.add(s.id);
-        return { ...s, assignedClassId: mapping.get(masked)! };
+        const targetId = move.targetClass.replace(/[^0-9]/g, '');
+        return { ...s, assignedClassId: targetId };
       }
       return s;
     });
@@ -119,9 +118,28 @@ const SimulationView: React.FC<{
                                 // Find movement info if this student moved
                                 let movementLabel = '이동';
                                 if (isMoved) {
-                                    // We need to find the movement that caused this
-                                    const masked = maskName(s.name);
-                                    const move = movements.find(m => m.studentId === s.id || m.studentName === masked);
+                                    // Try to find exact movement
+                                    // 1. Match by ID
+                                    let move = movements.find(m => m.studentId === s.id);
+                                    
+                                    // 2. Match by Name AND Previous Class
+                                    if (!move) {
+                                        const originalStudent = students.find(os => os.id === s.id);
+                                        const masked = maskName(s.name);
+                                        
+                                        if (originalStudent) {
+                                            move = movements.find(m => {
+                                                const moveCurrentClassId = m.currentClass.replace(/[^0-9]/g, '');
+                                                return m.studentName === masked && moveCurrentClassId === originalStudent.assignedClassId;
+                                            });
+                                        }
+                                        
+                                        // 3. Fallback
+                                        if (!move) {
+                                             move = movements.find(m => m.studentName === masked);
+                                        }
+                                    }
+
                                     if (move) {
                                         const fromClass = move.currentClass.replace(/반$/, '');
                                         movementLabel = `변경 전: ${fromClass}반`;
