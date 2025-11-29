@@ -4,7 +4,7 @@ import {
     Users, Plus, Settings, Wand2, Download, Trash2, 
     X, Square, RefreshCcw, Tag, FileDown,
     Save, Upload, ChevronLeft, ChevronRight, HelpCircle,
-    Undo, Redo, CheckSquare
+    Undo, Redo, CheckSquare, Database
 } from 'lucide-react';
 
 import { 
@@ -396,6 +396,53 @@ function App() {
           setTags(INITIAL_TAGS);
           // Optional: localStorage will update via useEffect
       }
+  };
+
+  const handleLoadSampleData = () => {
+    if (students.length > 0 && !window.confirm("현재 데이터가 모두 삭제되고 샘플 데이터로 대체됩니다. 계속하시겠습니까?")) {
+        return;
+    }
+    
+    saveHistory();
+
+    const sampleData = [
+        { name: "강민우", gender: "male", tags: ["t3"] }, // 공격성
+        { name: "김서연", gender: "female", tags: [] },
+        { name: "박준호", gender: "male", tags: ["t2", "t9"] }, // 휠체어, 화장실지원
+        { name: "이진아", gender: "female", tags: ["t5"] }, // 교사보조가능
+        { name: "정현수", gender: "male", tags: ["t4"] }, // 잦은결석
+        { name: "최수민", gender: "female", tags: ["t6"] }, // 학부모예민
+        { name: "조민재", gender: "male", tags: [] },
+        { name: "윤서윤", gender: "female", tags: ["t1", "t8"] }, // 기저귀, 분쇄식
+        { name: "장동현", gender: "male", tags: ["t3", "t10"] }, // 공격성, 보행지원
+        { name: "임지원", gender: "female", tags: [] },
+        { name: "한승우", gender: "male", tags: ["t5"] },
+        { name: "오하은", gender: "female", tags: ["t7"] }, // 베드사용
+        { name: "서준영", gender: "male", tags: [] },
+        { name: "신혜진", gender: "female", tags: ["t4"] },
+        { name: "권영민", gender: "male", tags: ["t3"] },
+        { name: "황지현", gender: "female", tags: ["t9"] },
+        { name: "안재석", gender: "male", tags: ["t2"] },
+        { name: "송예린", gender: "female", tags: ["t6"] },
+        { name: "전상우", gender: "male", tags: [] },
+        { name: "홍유진", gender: "female", tags: ["t5"] },
+    ];
+
+    const newStudents: Student[] = sampleData.map((d, i) => ({
+        id: `sample-${Date.now()}-${i}`,
+        name: d.name,
+        gender: d.gender as 'male' | 'female',
+        tagIds: d.tags,
+        assignedClassId: null
+    }));
+
+    setStudents(newStudents);
+    setSeparationRules([]);
+    setSchoolLevel('ELEMENTARY_MIDDLE');
+    setClassCount(3);
+    setTags(INITIAL_TAGS); // Reset tags to ensure IDs match
+    
+    alert("샘플 데이터가 로드되었습니다. 드래그 앤 드롭으로 반편성을 체험해보세요.");
   };
 
   const handleSaveProject = () => {
@@ -802,6 +849,13 @@ function App() {
                             accept=".json"
                             className="hidden" 
                         />
+                         <button 
+                            onClick={handleLoadSampleData}
+                            className="col-span-2 bg-white border border-gray-300 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 text-gray-700 py-2 px-2 rounded text-xs font-boldMZ flex items-center justify-center gap-2 transition-all mt-1"
+                        >
+                            <Database size={16} />
+                            Sample 데이터 자동입력
+                        </button>
                     </div>
 
                     <div className="border-t border-gray-200 pt-3">
