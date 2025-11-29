@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     Users, Plus, Settings, Wand2, Download, Trash2, 
     X, CheckSquare, Square, RefreshCcw, Tag, FileDown,
-    Save, Upload, ChevronLeft, ChevronRight
+    Save, Upload, ChevronLeft, ChevronRight, HelpCircle
 } from 'lucide-react';
 
 import { 
@@ -15,6 +15,7 @@ import { ClassColumn } from './components/ClassColumn';
 import { TagBadge } from './components/TagBadge';
 import { StudentCard } from './components/StudentCard';
 import { StatsPanel } from './components/StatsPanel';
+import { HelpModal } from './components/HelpModal';
 import { analyzeClasses } from './services/geminiService';
 import * as XLSX from 'xlsx';
 
@@ -32,6 +33,7 @@ function App() {
   const [showStats, setShowStats] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUnassignedOpen, setIsUnassignedOpen] = useState(true);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   
   const [editingStudent, setEditingStudent] = useState<Student | null>(null); // If null, adding new
   const [studentFormName, setStudentFormName] = useState('');
@@ -648,6 +650,13 @@ function App() {
             
             <div className="flex items-center gap-2">
                 <button 
+                    onClick={() => setShowHelpModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-300 transition-colors"
+                    title="도움말"
+                >
+                    <HelpCircle size={16} /> 도움말
+                </button>
+                <button 
                     onClick={() => setShowStats(!showStats)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors border ${showStats ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
@@ -802,6 +811,11 @@ function App() {
             )}
         </div>
       </div>
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <HelpModal onClose={() => setShowHelpModal(false)} />
+      )}
 
       {/* Student Add/Edit Modal */}
       {showStudentModal && (

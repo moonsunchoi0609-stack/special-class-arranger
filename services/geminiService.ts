@@ -96,8 +96,23 @@ export const analyzeClasses = async (
         return response.text;
     }
     return "분석 결과를 생성할 수 없습니다.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    return `AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. (Error: ${error instanceof Error ? error.message : String(error)})`;
+    
+    const errorMessage = error.message || String(error);
+
+    // Handle API Key Referrer Restriction (403)
+    if (errorMessage.includes("API_KEY_HTTP_REFERRER_BLOCKED") || 
+        errorMessage.includes("Requests from referer") ||
+        (errorMessage.includes("403") && errorMessage.includes("blocked"))) {
+      return `🚫 **API 키 설정 오류**\n\n현재 도메인(Referer)이 API 키 허용 목록에 포함되지 않았습니다.\nGoogle Cloud Console 또는 AI Studio에서 API 키 설정을 확인하고, 현재 도메인 주소를 추가해주세요.`;
+    }
+
+    // Handle Quota Exceeded (429)
+    if (errorMessage.includes("429") || errorMessage.includes("Quota") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+      return `⚠️ **API 사용량 초과**\n\n잠시 후 다시 시도해 주세요. (Quota Exceeded)`;
+    }
+
+    return `⚠️ **AI 분석 중 오류 발생**\n\n오류 내용: ${errorMessage}\n\n잠시 후 다시 시도하거나, 문제가 지속되면 관리자에게 문의하세요.`;
   }
 };
