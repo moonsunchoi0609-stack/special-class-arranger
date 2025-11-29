@@ -236,12 +236,13 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
   
   // Use passed classCount or fallback to derived
   const finalClassCount = classCount || classDetails.length;
+  const roundedCurrentScore = Math.round(currentScore);
 
   // Chart Data Preparation
   const barChartData = classDetails.map(c => ({
     name: `${c.classId.replace(/[^0-9]/g, '')}반`, // Fix double '반' issue by strictly using numbers
-    Risk: c.riskScore,
-    Balance: c.balanceScore
+    Risk: Math.round(c.riskScore),
+    Balance: Math.round(c.balanceScore)
   }));
 
   // Helper to find original student by masked name (best effort)
@@ -292,16 +293,16 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                             <circle cx="64" cy="64" r="54" stroke="#f3f4f6" strokeWidth="12" fill="none" />
                             <circle 
                                 cx="64" cy="64" r="54" 
-                                stroke={currentScore >= 80 ? '#22c55e' : currentScore >= 60 ? '#3b82f6' : '#ef4444'} 
+                                stroke={roundedCurrentScore >= 80 ? '#22c55e' : roundedCurrentScore >= 60 ? '#3b82f6' : '#ef4444'} 
                                 strokeWidth="12" 
                                 fill="none" 
                                 strokeDasharray={339.29} 
-                                strokeDashoffset={339.29 - (339.29 * currentScore) / 100}
+                                strokeDashoffset={339.29 - (339.29 * roundedCurrentScore) / 100}
                                 className="transition-all duration-1000 ease-out"
                             />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-5xl font-black text-gray-800">{currentScore}</span>
+                            <span className="text-5xl font-black text-gray-800">{roundedCurrentScore}</span>
                             <span className="text-sm text-gray-400 font-medium">/ 100</span>
                         </div>
                     </div>
@@ -386,8 +387,8 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                                         {cls.statusTitle}
                                     </span>
                                     <div className="flex gap-1.5 text-xs font-bold">
-                                        <span className={`px-1.5 py-0.5 rounded bg-red-100 text-red-700`}>Risk: {cls.riskScore}</span>
-                                        <span className={`px-1.5 py-0.5 rounded bg-blue-100 text-blue-700`}>Bal: {cls.balanceScore}</span>
+                                        <span className={`px-1.5 py-0.5 rounded bg-red-100 text-red-700`}>Risk: {Math.round(cls.riskScore)}</span>
+                                        <span className={`px-1.5 py-0.5 rounded bg-blue-100 text-blue-700`}>Bal: {Math.round(cls.balanceScore)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -424,130 +425,135 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
 
                 {suggestions && suggestions.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4">
-                        {suggestions.map((sug, idx) => (
-                            <div key={idx} className="bg-white rounded-xl shadow-sm border border-indigo-100 flex flex-col overflow-hidden hover:shadow-md transition-all">
-                                
-                                <div className="p-6">
-                                    {/* Updated Header: Compact Score */}
-                                    <div className="flex flex-col justify-between gap-3 mb-5 border-b border-gray-100 pb-5">
-                                         <div className="flex items-start justify-between w-full">
-                                             <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="bg-indigo-100 text-indigo-700 text-sm font-bold px-2.5 py-0.5 rounded-full">추천 {idx + 1}</span>
-                                                    <h4 className="font-bold text-xl text-gray-900">{sug.title}</h4>
-                                                </div>
-                                                <p className="text-sm text-gray-600 leading-relaxed">{sug.reason}</p>
-                                             </div>
-                                             
-                                             {/* Compact Score Badge */}
-                                             <div className="flex flex-col items-end ml-4 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
-                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">예상 점수</span>
-                                                 <div className="flex items-center gap-1.5">
-                                                     <span className="text-2xl font-black text-indigo-600">{sug.predictedScore}</span>
-                                                     {sug.predictedScore > currentScore && (
-                                                         <span className="bg-green-100 text-green-700 text-xs font-bold px-1.5 py-0.5 rounded">
-                                                             +{sug.predictedScore - currentScore}
-                                                         </span>
-                                                     )}
-                                                 </div>
-                                             </div>
-                                         </div>
-                                    </div>
+                        {suggestions.map((sug, idx) => {
+                            const roundedPredicted = Math.round(sug.predictedScore);
+                            const scoreDiff = roundedPredicted - roundedCurrentScore;
 
-                                    {/* Movements List */}
-                                    <div className="space-y-3 mb-5">
-                                        {sug.movements.map((move, mIdx) => {
-                                            const originalStudent = getOriginalStudent(move.studentName);
-                                            return (
-                                                <div key={mIdx} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                                    
-                                                    {/* Student Info */}
-                                                    <div className="flex items-center gap-3 min-w-[150px]">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                                                            originalStudent?.gender === 'female' 
-                                                                ? 'bg-rose-100 text-rose-600' 
-                                                                : 'bg-blue-100 text-blue-600'
-                                                        }`}>
-                                                            {originalStudent?.gender === 'female' ? '여' : '남'}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-bold text-gray-900 text-sm">
-                                                                {move.studentName}
+                            return (
+                                <div key={idx} className="bg-white rounded-xl shadow-sm border border-indigo-100 flex flex-col overflow-hidden hover:shadow-md transition-all">
+                                    
+                                    <div className="p-6">
+                                        {/* Updated Header: Compact Score */}
+                                        <div className="flex flex-col justify-between gap-3 mb-5 border-b border-gray-100 pb-5">
+                                            <div className="flex items-start justify-between w-full">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="bg-indigo-100 text-indigo-700 text-sm font-bold px-2.5 py-0.5 rounded-full">추천</span>
+                                                        <h4 className="font-bold text-xl text-gray-900">{sug.title}</h4>
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 leading-relaxed">{sug.reason}</p>
+                                                </div>
+                                                
+                                                {/* Compact Score Badge */}
+                                                <div className="flex flex-col items-end ml-4 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">예상 점수</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-2xl font-black text-indigo-600">{roundedPredicted}</span>
+                                                        {scoreDiff > 0 && (
+                                                            <span className="bg-green-100 text-green-700 text-xs font-bold px-1.5 py-0.5 rounded">
+                                                                +{scoreDiff}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Movements List */}
+                                        <div className="space-y-3 mb-5">
+                                            {sug.movements.map((move, mIdx) => {
+                                                const originalStudent = getOriginalStudent(move.studentName);
+                                                return (
+                                                    <div key={mIdx} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                        
+                                                        {/* Student Info */}
+                                                        <div className="flex items-center gap-3 min-w-[150px]">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                                                originalStudent?.gender === 'female' 
+                                                                    ? 'bg-rose-100 text-rose-600' 
+                                                                    : 'bg-blue-100 text-blue-600'
+                                                            }`}>
+                                                                {originalStudent?.gender === 'female' ? '여' : '남'}
                                                             </div>
-                                                            {/* Tags */}
-                                                            {originalStudent && tags && (
-                                                                <div className="flex flex-wrap gap-1 mt-1">
-                                                                    {originalStudent.tagIds.map(tid => {
-                                                                        const t = tags.find(tag => tag.id === tid);
-                                                                        return t ? (
-                                                                            <span key={t.id} className={`text-[10px] px-1.5 py-0.5 rounded leading-none font-medium ${t.colorBg} ${t.colorText}`}>
-                                                                                {t.label}
-                                                                            </span>
-                                                                        ) : null;
-                                                                    })}
+                                                            <div>
+                                                                <div className="font-bold text-gray-900 text-sm">
+                                                                    {move.studentName}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Direction */}
-                                                    <div className="flex-1 flex items-center justify-center px-2">
-                                                        <div className="flex items-center gap-3 text-sm font-medium w-full max-w-[240px]">
-                                                            <div className="flex-1 text-center py-1.5 bg-white border border-gray-200 rounded text-gray-600">
-                                                                {(move.currentClass && move.currentClass !== '미배정') 
-                                                                    ? `${move.currentClass.replace(/[^0-9]/g, '')}반` 
-                                                                    : '미배정'}
-                                                            </div>
-                                                            <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
-                                                            <div className="flex-1 text-center py-1.5 bg-indigo-600 text-white rounded shadow-sm">
-                                                                {move.targetClass.replace(/[^0-9]/g, '')}반
+                                                                {/* Tags */}
+                                                                {originalStudent && tags && (
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {originalStudent.tagIds.map(tid => {
+                                                                            const t = tags.find(tag => tag.id === tid);
+                                                                            return t ? (
+                                                                                <span key={t.id} className={`text-[10px] px-1.5 py-0.5 rounded leading-none font-medium ${t.colorBg} ${t.colorText}`}>
+                                                                                    {t.label}
+                                                                                </span>
+                                                                            ) : null;
+                                                                        })}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
+
+                                                        {/* Direction */}
+                                                        <div className="flex-1 flex items-center justify-center px-2">
+                                                            <div className="flex items-center gap-3 text-sm font-medium w-full max-w-[240px]">
+                                                                <div className="flex-1 text-center py-1.5 bg-white border border-gray-200 rounded text-gray-600">
+                                                                    {(move.currentClass && move.currentClass !== '미배정') 
+                                                                        ? `${move.currentClass.replace(/[^0-9]/g, '')}반` 
+                                                                        : '미배정'}
+                                                                </div>
+                                                                <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+                                                                <div className="flex-1 text-center py-1.5 bg-indigo-600 text-white rounded shadow-sm">
+                                                                    {move.targetClass.replace(/[^0-9]/g, '')}반
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                     </div>
+                                                );
+                                            })}
+                                        </div>
 
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                        {/* Expected Effect */}
+                                        <div className="text-sm bg-green-50 text-green-900 p-3 rounded-lg border border-green-100 flex gap-2">
+                                            <CheckCircle size={18} className="mt-0.5 flex-shrink-0" />
+                                            <span><strong>기대 효과:</strong> {sug.expectedEffect}</span>
+                                        </div>
 
-                                    {/* Expected Effect */}
-                                    <div className="text-sm bg-green-50 text-green-900 p-3 rounded-lg border border-green-100 flex gap-2">
-                                        <CheckCircle size={18} className="mt-0.5 flex-shrink-0" />
-                                        <span><strong>기대 효과:</strong> {sug.expectedEffect}</span>
-                                    </div>
-
-                                    {/* Simulation Toggle */}
-                                    <div className="mt-5 pt-3 border-t border-dashed border-gray-200">
-                                        <button 
-                                            onClick={() => toggleSimulation(idx)}
-                                            className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors w-full justify-center py-1.5"
-                                        >
-                                            {expandedSimulations.has(idx) ? (
-                                                <>
-                                                    <ChevronUp size={16} />
-                                                    시뮬레이션 접기
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ChevronDown size={16} />
-                                                    전체 편성 시뮬레이션 보기
-                                                </>
+                                        {/* Simulation Toggle */}
+                                        <div className="mt-5 pt-3 border-t border-dashed border-gray-200">
+                                            <button 
+                                                onClick={() => toggleSimulation(idx)}
+                                                className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors w-full justify-center py-1.5"
+                                            >
+                                                {expandedSimulations.has(idx) ? (
+                                                    <>
+                                                        <ChevronUp size={16} />
+                                                        시뮬레이션 접기
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ChevronDown size={16} />
+                                                        전체 편성 시뮬레이션 보기
+                                                    </>
+                                                )}
+                                            </button>
+                                            
+                                            {/* Render Simulation View if expanded */}
+                                            {expandedSimulations.has(idx) && students && tags && (
+                                                <SimulationView 
+                                                    students={students}
+                                                    movements={sug.movements}
+                                                    classCount={finalClassCount}
+                                                    tags={tags}
+                                                />
                                             )}
-                                        </button>
-                                        
-                                        {/* Render Simulation View if expanded */}
-                                        {expandedSimulations.has(idx) && students && tags && (
-                                            <SimulationView 
-                                                students={students}
-                                                movements={sug.movements}
-                                                classCount={finalClassCount}
-                                                tags={tags}
-                                            />
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="text-center py-10 bg-white/50 rounded-xl border border-dashed border-gray-300">
@@ -558,7 +564,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                 )}
             </section>
 
-            <div className="mt-8 text-center text-xs text-gray-400">
+            <div className="mt-8 text-center text-sm text-red-500">
                 ※주의: 본 분석 결과는 AI에 의해 생성되었으며, 반드시 참고용으로만 활용해 주시기 바랍니다. 최종 결정은 학교의 상황을 고려하여 진행해 주세요.
             </div>
         </div>
