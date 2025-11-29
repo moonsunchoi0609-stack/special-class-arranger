@@ -240,7 +240,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
 
   // Chart Data Preparation
   const barChartData = classDetails.map(c => ({
-    name: `${c.classId}반`,
+    name: `${c.classId.replace(/반$/, '')}반`,
     Risk: c.riskScore,
     Balance: c.balanceScore
   }));

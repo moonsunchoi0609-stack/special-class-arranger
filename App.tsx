@@ -483,7 +483,7 @@ function App() {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         
         {/* Top Bar */}
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm z-10">
+        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm z-10 flex-shrink-0">
             <div className="flex items-center gap-3">
                 {!isSidebarOpen && (
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-gray-100 rounded text-gray-600">
@@ -555,7 +555,7 @@ function App() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 bg-gray-50/50">
+        <div className="flex-1 overflow-hidden p-4 bg-gray-50/50">
             
             {showStats ? (
                 <div className="h-full overflow-y-auto">
@@ -572,9 +572,9 @@ function App() {
                     <StatsPanel students={students} tags={tags} classCount={classCount} />
                 </div>
             ) : (
-                <div className="flex h-full gap-4 min-w-max">
+                <div className="flex h-full gap-4 w-full">
                     {/* Unassigned Column (Collapsible) */}
-                    <div className={`flex flex-col h-full transition-all duration-300 ease-in-out ${isUnassignedOpen ? 'w-72' : 'w-12'}`}>
+                    <div className={`flex flex-col h-full transition-all duration-300 ease-in-out flex-shrink-0 ${isUnassignedOpen ? 'w-72' : 'w-12'}`}>
                         {isUnassignedOpen ? (
                              // Expanded View
                             <>
@@ -663,9 +663,9 @@ function App() {
                     </div>
 
                     {/* Class Columns */}
-                    <div className="flex gap-4 h-full overflow-x-auto pb-2 pl-2 border-l border-gray-200">
+                    <div className="flex-1 flex gap-4 h-full overflow-x-auto pb-2 pl-2 border-l border-gray-200">
                         {classList.map(classId => (
-                            <div key={classId} className="w-72 h-full">
+                            <div key={classId} className="w-72 h-full flex-shrink-0">
                                 <ClassColumn 
                                     id={classId}
                                     name={`${classId}반`}
@@ -716,7 +716,7 @@ function App() {
         <HelpModal onClose={() => setShowHelpModal(false)} />
       )}
       
-      {/* AI Report Modal */}
+      {/* Ai Report Modal */}
       <AiReportModal 
         isOpen={showAiReport} 
         onClose={() => setShowAiReport(false)}
