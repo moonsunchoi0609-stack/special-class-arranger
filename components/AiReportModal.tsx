@@ -34,8 +34,8 @@ const SimulationView: React.FC<{
   tags: TagDefinition[];
 }> = ({ students, movements, classCount, tags }) => {
   // Logic to calculate simulated state
-  const { simulatedStudents, movedStudentIds } = useMemo(() => {
-    const movedIds = new Set<string>();
+  const { simulatedStudents, movementInfo } = useMemo(() => {
+    const info = new Map<string, string>(); // studentId -> "X반→Y반"
     const mapping = new Map<string, string>(); // maskedName -> targetClassId
 
     movements.forEach(m => {
@@ -47,13 +47,24 @@ const SimulationView: React.FC<{
     const newStudents = students.map(s => {
       const masked = maskName(s.name);
       if (mapping.has(masked)) {
-        movedIds.add(s.id);
-        return { ...s, assignedClassId: mapping.get(masked)! };
+        const targetId = mapping.get(masked)!;
+        
+        // Find movement to get labels
+        const move = movements.find(m => m.studentName === masked);
+        if (move) {
+             const fromClass = move.currentClass.replace(/[^0-9]/g, ''); // Extract number
+             const toClass = move.targetClass.replace(/[^0-9]/g, '');
+             const fromLabel = fromClass ? `${fromClass}반` : '미배정';
+             const toLabel = `${toClass}반`;
+             info.set(s.id, `${fromLabel} → ${toLabel}`);
+        }
+
+        return { ...s, assignedClassId: targetId };
       }
       return s;
     });
 
-    return { simulatedStudents: newStudents, movedStudentIds: movedIds };
+    return { simulatedStudents: newStudents, movementInfo: info };
   }, [students, movements]);
 
   // Group by class
@@ -81,19 +92,21 @@ const SimulationView: React.FC<{
                 이동하는 학생 강조됨
             </span>
         </h5>
-        <div className="flex gap-3 min-w-max pb-2">
+        <div className="flex gap-3 min-w-max pb-2 items-start">
             {Object.keys(classes).map(classId => (
-                <div key={classId} className="w-52 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm">
+                <div key={classId} className="w-52 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm flex-shrink-0">
                     <div className="p-2 border-b border-slate-100 bg-slate-50/50 rounded-t-lg flex justify-between items-center">
                         <span className="font-bold text-sm text-slate-700">{classId}반</span>
                         <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-medium">{classes[classId].length}명</span>
                     </div>
-                    <div className="p-2 space-y-2 max-h-[300px] overflow-y-auto no-scrollbar">
+                    {/* Removed max-h and overflow-y-auto to show all students without scrolling */}
+                    <div className="p-2 space-y-2">
                          {classes[classId].length === 0 && (
                             <div className="text-center text-xs text-gray-300 py-4">학생 없음</div>
                          )}
                          {classes[classId].sort((a,b)=>a.name.localeCompare(b.name)).map(s => {
-                             const isMoved = movedStudentIds.has(s.id);
+                             const moveLabel = movementInfo.get(s.id);
+                             const isMoved = !!moveLabel;
                              return (
                                  <div key={s.id} className={`
                                     p-2 rounded border text-sm relative transition-all
@@ -107,7 +120,9 @@ const SimulationView: React.FC<{
                                             {s.name}
                                          </span>
                                          {isMoved && (
-                                             <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse">이동</span>
+                                             <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+                                                {moveLabel}
+                                             </span>
                                          )}
                                      </div>
                                      <div className="flex flex-wrap gap-1">
@@ -400,9 +415,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                                 <div className="flex flex-col md:flex-row">
                                     {/* Header / Score Section */}
                                     <div className="p-4 bg-indigo-50 border-b md:border-b-0 md:border-r border-indigo-100 flex flex-col justify-center items-center min-w-[140px] text-center gap-2">
-                                        <div className="w-10 h-10 rounded-full bg-white text-indigo-600 flex items-center justify-center shadow-sm font-bold text-lg">
-                                            1
-                                        </div>
+                                        {/* Removed Number Badge Here */}
                                         <div>
                                             <div className="text-xs text-gray-500 font-bold uppercase mb-1">예상 균형 점수</div>
                                             <div className="text-2xl font-black text-indigo-700">{sug.predictedScore}</div>
