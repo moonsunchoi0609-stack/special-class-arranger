@@ -55,7 +55,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                   <h4 className="font-bold text-gray-900 text-base mb-1">반 배정 (Drag & Drop)</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     학생 카드를 마우스로 드래그하여 원하는 반으로 이동시킵니다.<br/>
-                    정원 초과 또는 분리 배정 규칙 위반 시, 해당 반의 테두리가 <span className="font-bold text-red-600">붉은색</span>으로 표시되어 즉시 확인이 가능합니다.
+                    정원 초과 또는 분리규칙 위반 시, 해당 반의 테두리가 <span className="font-bold text-red-600">붉은색</span>으로 표시되어 즉시 확인이 가능합니다.
                   </p>
                 </div>
               </div>
@@ -66,7 +66,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                 <div>
                   <h4 className="font-bold text-gray-900 text-base mb-1">분석 및 결과 저장</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    <strong>AI 분석</strong> 기능을 통해 반별 균형 및 특성 분포에 대한 전문적인 피드백을 확인할 수 있습니다.(1~2분 소요)<br/>
+                    <strong>AI 분석</strong> 기능을 통해 반별 균형 및 특성 분포에 대한 피드백을 확인할 수 있습니다.(1~2분 소요)<br/>
                     반 편성이 완료되면 <strong>Excel 저장</strong> 버튼을 사용하여 다운로드할 수 있습니다.
                   </p>
                 </div>

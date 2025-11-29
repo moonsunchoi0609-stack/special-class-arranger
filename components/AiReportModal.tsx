@@ -423,118 +423,120 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                     <div className="grid grid-cols-1 gap-4">
                         {suggestions.map((sug, idx) => (
                             <div key={idx} className="bg-white rounded-xl shadow-sm border border-indigo-100 flex flex-col overflow-hidden hover:shadow-md transition-all">
-                                <div className="flex flex-col md:flex-row">
-                                    {/* Header / Score Section */}
-                                    <div className="p-4 bg-indigo-50 border-b md:border-b-0 md:border-r border-indigo-100 flex flex-col justify-center items-center min-w-[140px] text-center gap-2">
-                                        <div>
-                                            <div className="text-xs text-gray-500 font-bold uppercase mb-1">예상 균형 점수</div>
-                                            <div className="text-2xl font-black text-indigo-700">{sug.predictedScore}</div>
-                                        </div>
-                                        {sug.predictedScore > currentScore && (
-                                            <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
-                                                +{sug.predictedScore - currentScore}점
-                                            </span>
-                                        )}
+                                
+                                <div className="p-5">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 border-b border-gray-100 pb-4">
+                                         <div>
+                                             <div className="flex items-center gap-2 mb-1">
+                                                 <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">추천 {idx + 1}</span>
+                                                 <h4 className="font-bold text-lg text-gray-800">{sug.title}</h4>
+                                             </div>
+                                             <p className="text-sm text-gray-600">{sug.reason}</p>
+                                         </div>
+
+                                         <div className="flex items-center gap-4 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 flex-shrink-0">
+                                             <div className="text-right">
+                                                 <span className="text-[10px] uppercase text-gray-400 font-bold block">예상 점수</span>
+                                                 <span className="text-2xl font-black text-indigo-600 leading-none">{sug.predictedScore}</span>
+                                             </div>
+                                             {sug.predictedScore > currentScore && (
+                                                 <div className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-md">
+                                                     +{sug.predictedScore - currentScore}
+                                                 </div>
+                                             )}
+                                         </div>
                                     </div>
 
-                                    {/* Content Section */}
-                                    <div className="flex-1 p-5">
-                                        <div className="mb-4">
-                                            <h4 className="font-bold text-lg text-gray-800 mb-1">{sug.title}</h4>
-                                            <p className="text-sm text-gray-500">{sug.reason}</p>
-                                        </div>
-
-                                        {/* Movements List */}
-                                        <div className="space-y-3 mb-4">
-                                            {sug.movements.map((move, mIdx) => {
-                                                const originalStudent = getOriginalStudent(move.studentName);
-                                                return (
-                                                    <div key={mIdx} className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                                        
-                                                        {/* Student Info */}
-                                                        <div className="flex items-center gap-2 min-w-[140px]">
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                                                                originalStudent?.gender === 'female' 
-                                                                    ? 'bg-rose-100 text-rose-600' 
-                                                                    : 'bg-blue-100 text-blue-600'
-                                                            }`}>
-                                                                {originalStudent?.gender === 'female' ? '여' : '남'}
-                                                            </div>
-                                                            <div>
-                                                                <div className="font-bold text-gray-800 text-sm">
-                                                                    {move.studentName}
-                                                                </div>
-                                                                {/* Tags */}
-                                                                {originalStudent && tags && (
-                                                                    <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                        {originalStudent.tagIds.map(tid => {
-                                                                            const t = tags.find(tag => tag.id === tid);
-                                                                            return t ? (
-                                                                                <span key={t.id} className={`text-[9px] px-1 py-0.5 rounded leading-none ${t.colorBg} ${t.colorText}`}>
-                                                                                    {t.label}
-                                                                                </span>
-                                                                            ) : null;
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                    {/* Movements List */}
+                                    <div className="space-y-3 mb-4">
+                                        {sug.movements.map((move, mIdx) => {
+                                            const originalStudent = getOriginalStudent(move.studentName);
+                                            return (
+                                                <div key={mIdx} className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                                    
+                                                    {/* Student Info */}
+                                                    <div className="flex items-center gap-2 min-w-[140px]">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                                            originalStudent?.gender === 'female' 
+                                                                ? 'bg-rose-100 text-rose-600' 
+                                                                : 'bg-blue-100 text-blue-600'
+                                                        }`}>
+                                                            {originalStudent?.gender === 'female' ? '여' : '남'}
                                                         </div>
-
-                                                        {/* Direction */}
-                                                        <div className="flex-1 flex items-center justify-center px-2">
-                                                            <div className="flex items-center gap-2 text-sm font-medium w-full max-w-[200px]">
-                                                                <div className="flex-1 text-center py-1 bg-white border border-gray-200 rounded text-gray-600">
-                                                                    {(move.currentClass && move.currentClass !== '미배정') 
-                                                                        ? `${move.currentClass.replace(/반$/, '')}반` 
-                                                                        : '미배정'}
-                                                                </div>
-                                                                <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
-                                                                <div className="flex-1 text-center py-1 bg-indigo-600 text-white rounded shadow-sm">
-                                                                    {move.targetClass.replace(/반$/, '')}반
-                                                                </div>
+                                                        <div>
+                                                            <div className="font-bold text-gray-800 text-sm">
+                                                                {move.studentName}
                                                             </div>
+                                                            {/* Tags */}
+                                                            {originalStudent && tags && (
+                                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                    {originalStudent.tagIds.map(tid => {
+                                                                        const t = tags.find(tag => tag.id === tid);
+                                                                        return t ? (
+                                                                            <span key={t.id} className={`text-[9px] px-1 py-0.5 rounded leading-none ${t.colorBg} ${t.colorText}`}>
+                                                                                {t.label}
+                                                                            </span>
+                                                                        ) : null;
+                                                                    })}
+                                                                </div>
+                                                            )}
                                                         </div>
-
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
 
-                                        {/* Expected Effect */}
-                                        <div className="text-sm bg-green-50 text-green-800 p-3 rounded-lg border border-green-100 flex gap-2">
-                                            <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
-                                            <span><strong>기대 효과:</strong> {sug.expectedEffect}</span>
-                                        </div>
+                                                    {/* Direction */}
+                                                    <div className="flex-1 flex items-center justify-center px-2">
+                                                        <div className="flex items-center gap-2 text-sm font-medium w-full max-w-[200px]">
+                                                            <div className="flex-1 text-center py-1 bg-white border border-gray-200 rounded text-gray-600">
+                                                                {(move.currentClass && move.currentClass !== '미배정') 
+                                                                    ? `${move.currentClass.replace(/반$/, '')}반` 
+                                                                    : '미배정'}
+                                                            </div>
+                                                            <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+                                                            <div className="flex-1 text-center py-1 bg-indigo-600 text-white rounded shadow-sm">
+                                                                {move.targetClass.replace(/반$/, '')}반
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                        {/* Simulation Toggle */}
-                                        <div className="mt-4 pt-3 border-t border-dashed border-gray-200">
-                                            <button 
-                                                onClick={() => toggleSimulation(idx)}
-                                                className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors w-full justify-center py-1"
-                                            >
-                                                {expandedSimulations.has(idx) ? (
-                                                    <>
-                                                        <ChevronUp size={16} />
-                                                        시뮬레이션 접기
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ChevronDown size={16} />
-                                                        전체 편성 시뮬레이션 보기
-                                                    </>
-                                                )}
-                                            </button>
-                                            
-                                            {/* Render Simulation View if expanded */}
-                                            {expandedSimulations.has(idx) && students && tags && (
-                                                <SimulationView 
-                                                    students={students}
-                                                    movements={sug.movements}
-                                                    classCount={finalClassCount}
-                                                    tags={tags}
-                                                />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Expected Effect */}
+                                    <div className="text-sm bg-green-50 text-green-800 p-3 rounded-lg border border-green-100 flex gap-2">
+                                        <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
+                                        <span><strong>기대 효과:</strong> {sug.expectedEffect}</span>
+                                    </div>
+
+                                    {/* Simulation Toggle */}
+                                    <div className="mt-4 pt-3 border-t border-dashed border-gray-200">
+                                        <button 
+                                            onClick={() => toggleSimulation(idx)}
+                                            className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors w-full justify-center py-1"
+                                        >
+                                            {expandedSimulations.has(idx) ? (
+                                                <>
+                                                    <ChevronUp size={16} />
+                                                    시뮬레이션 접기
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ChevronDown size={16} />
+                                                    전체 편성 시뮬레이션 보기
+                                                </>
                                             )}
-                                        </div>
+                                        </button>
+                                        
+                                        {/* Render Simulation View if expanded */}
+                                        {expandedSimulations.has(idx) && students && tags && (
+                                            <SimulationView 
+                                                students={students}
+                                                movements={sug.movements}
+                                                classCount={finalClassCount}
+                                                tags={tags}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </div>
