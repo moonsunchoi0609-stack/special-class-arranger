@@ -591,16 +591,16 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
         <div className="p-4 border-t bg-white flex justify-end gap-3">
             <button 
                 onClick={onClose}
-                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors text-base"
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold transition-colors text-sm"
             >
                 닫기
             </button>
             {onReanalyze && (
                 <button 
                     onClick={onReanalyze}
-                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-200 flex items-center gap-2 text-base"
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold transition-all shadow-lg shadow-indigo-200 flex items-center gap-2 text-sm"
                 >
-                    <RefreshCcw size={18} />
+                    <RefreshCcw size={16} />
                     AI 분석 재실행
                 </button>
             )}
