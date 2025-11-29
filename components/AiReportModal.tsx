@@ -96,7 +96,7 @@ const SimulationView: React.FC<{
                 전체 편성 시뮬레이션
                 <span className="text-xs font-normal text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 ml-2">
                     <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 mr-1.5"></span>
-                    이동하는 학생 강조됨
+                    이동하는 학생
                 </span>
             </h5>
         </div>
@@ -115,18 +115,6 @@ const SimulationView: React.FC<{
                             )}
                             {classes[classId].sort((a,b)=>a.name.localeCompare(b.name)).map(s => {
                                 const isMoved = movedStudentIds.has(s.id);
-                                
-                                // Find movement info if this student moved
-                                let movementLabel = '이동';
-                                if (isMoved) {
-                                    // We need to find the movement that caused this
-                                    const masked = maskName(s.name);
-                                    const move = movements.find(m => m.studentId === s.id || m.studentName === masked);
-                                    if (move) {
-                                        const fromClass = move.currentClass.replace(/반$/, '');
-                                        movementLabel = `변경 전: ${fromClass}반`;
-                                    }
-                                }
 
                                 return (
                                     <div key={s.id} className={`
@@ -140,11 +128,6 @@ const SimulationView: React.FC<{
                                             <span className={`font-bold ${isMoved ? 'text-indigo-900' : 'text-slate-800'}`}>
                                                 {maskName(s.name)}
                                             </span>
-                                            {isMoved && (
-                                                <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
-                                                    {movementLabel}
-                                                </span>
-                                            )}
                                         </div>
                                         <div className="flex flex-wrap gap-1">
                                             {s.gender && (
