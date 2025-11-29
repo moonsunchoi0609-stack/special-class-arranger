@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => {
     define: {
       // Maps process.env.API_KEY in the code to the VITE_API_KEY environment variable value
       // This ensures compatibility with the code that uses process.env.API_KEY
-      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY)
+      // Fallback to empty string to prevent build errors if env var is missing
+      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || '')
     }
   };
 });

@@ -18,7 +18,13 @@ export const analyzeClasses = async (
   classCount: number,
   schoolLevel: SchoolLevel
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    return "🚫 **API 키 미설정**\n\n시스템 설정에서 API 키를 확인할 수 없습니다. 관리자에게 문의하거나 네트워크 상태를 확인해주세요.";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   // Prepare data context
   const classesMap: Record<string, Student[]> = {};
