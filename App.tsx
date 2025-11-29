@@ -345,12 +345,15 @@ function App() {
         const shuffledTags = [...INITIAL_TAGS].sort(() => 0.5 - Math.random());
         const selectedTagIds = shuffledTags.slice(0, tagCount).map(t => t.id);
 
+        // Auto-assign to classes evenly
+        const assignedClassId = (Math.floor(i / capacityPerClass) + 1).toString();
+
         generatedStudents.push({
             id: `sample-${Date.now()}-${i}`,
             name,
             gender,
             tagIds: selectedTagIds,
-            assignedClassId: null
+            assignedClassId: assignedClassId
         });
     }
 
@@ -359,7 +362,7 @@ function App() {
     setTags(INITIAL_TAGS); 
     setAiAnalysis(null);
     
-    alert(`현재 설정(${schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중등' : '고등'}, ${classCount}학급)에 맞춰 ${totalCount}명의 샘플 데이터가 생성되었습니다.`);
+    alert(`현재 설정(${schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중등' : '고등'}, ${classCount}학급)에 맞춰 ${totalCount}명의 샘플 데이터가 생성되어 각 반에 자동 배정되었습니다.`);
   };
 
   const handleSaveProject = () => {

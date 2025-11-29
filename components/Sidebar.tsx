@@ -117,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">총 학급 수: {classCount}</label>
                 <input 
-                  type="range" min="1" max="10" 
+                  type="range" min="1" max="5" 
                   value={classCount} 
                   onMouseDown={saveHistory} // Snapshot before drag
                   onChange={(e) => setClassCount(Number(e.target.value))}

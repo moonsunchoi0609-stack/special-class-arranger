@@ -34,8 +34,8 @@ const SimulationView: React.FC<{
   tags: TagDefinition[];
 }> = ({ students, movements, classCount, tags }) => {
   // Logic to calculate simulated state
-  const { simulatedStudents, movementInfo } = useMemo(() => {
-    const info = new Map<string, string>(); // studentId -> "X반→Y반"
+  const { simulatedStudents, movedStudentIds } = useMemo(() => {
+    const movedIds = new Set<string>();
     const mapping = new Map<string, string>(); // maskedName -> targetClassId
 
     movements.forEach(m => {
@@ -47,24 +47,13 @@ const SimulationView: React.FC<{
     const newStudents = students.map(s => {
       const masked = maskName(s.name);
       if (mapping.has(masked)) {
-        const targetId = mapping.get(masked)!;
-        
-        // Find movement to get labels
-        const move = movements.find(m => m.studentName === masked);
-        if (move) {
-             const fromClass = move.currentClass.replace(/[^0-9]/g, ''); // Extract number
-             const toClass = move.targetClass.replace(/[^0-9]/g, '');
-             const fromLabel = fromClass ? `${fromClass}반` : '미배정';
-             const toLabel = `${toClass}반`;
-             info.set(s.id, `${fromLabel} → ${toLabel}`);
-        }
-
-        return { ...s, assignedClassId: targetId };
+        movedIds.add(s.id);
+        return { ...s, assignedClassId: mapping.get(masked)! };
       }
       return s;
     });
 
-    return { simulatedStudents: newStudents, movementInfo: info };
+    return { simulatedStudents: newStudents, movedStudentIds: movedIds };
   }, [students, movements]);
 
   // Group by class
@@ -82,6 +71,9 @@ const SimulationView: React.FC<{
     return groups;
   }, [simulatedStudents, classCount]);
 
+  // Sort class IDs numerically to ensure correct order (1, 2, ... 10)
+  const sortedClassIds = Object.keys(classes).sort((a, b) => Number(a) - Number(b));
+
   return (
     <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 overflow-x-auto animate-in slide-in-from-top-2 duration-300">
         <h5 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
@@ -92,21 +84,37 @@ const SimulationView: React.FC<{
                 이동하는 학생 강조됨
             </span>
         </h5>
+        {/* min-w-max ensures the flex container takes up full required width, triggering scroll on parent */}
         <div className="flex gap-3 min-w-max pb-2 items-start">
-            {Object.keys(classes).map(classId => (
+            {sortedClassIds.map(classId => (
                 <div key={classId} className="w-52 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm flex-shrink-0">
                     <div className="p-2 border-b border-slate-100 bg-slate-50/50 rounded-t-lg flex justify-between items-center">
                         <span className="font-bold text-sm text-slate-700">{classId}반</span>
                         <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-medium">{classes[classId].length}명</span>
                     </div>
-                    {/* Removed max-h and overflow-y-auto to show all students without scrolling */}
+                    {/* Ensure full height is shown by removing overflow-y and height constraints */}
                     <div className="p-2 space-y-2">
                          {classes[classId].length === 0 && (
                             <div className="text-center text-xs text-gray-300 py-4">학생 없음</div>
                          )}
                          {classes[classId].sort((a,b)=>a.name.localeCompare(b.name)).map(s => {
-                             const moveLabel = movementInfo.get(s.id);
-                             const isMoved = !!moveLabel;
+                             const isMoved = movedStudentIds.has(s.id);
+                             
+                             // Find movement info if this student moved
+                             let movementLabel = '이동';
+                             if (isMoved) {
+                                 // We need to find the movement that caused this
+                                 // Since we only have access to `movements` (list of AiMovement)
+                                 // and `s` (Student with assignedClassId already updated)
+                                 // We reconstruct the label from the movement definition
+                                 const masked = maskName(s.name);
+                                 const move = movements.find(m => m.studentName === masked);
+                                 if (move) {
+                                     const fromClass = move.currentClass.replace(/반$/, '');
+                                     movementLabel = `변경 전: ${fromClass}반`;
+                                 }
+                             }
+
                              return (
                                  <div key={s.id} className={`
                                     p-2 rounded border text-sm relative transition-all
@@ -121,7 +129,7 @@ const SimulationView: React.FC<{
                                          </span>
                                          {isMoved && (
                                              <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
-                                                {moveLabel}
+                                                 {movementLabel}
                                              </span>
                                          )}
                                      </div>
@@ -415,7 +423,6 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                                 <div className="flex flex-col md:flex-row">
                                     {/* Header / Score Section */}
                                     <div className="p-4 bg-indigo-50 border-b md:border-b-0 md:border-r border-indigo-100 flex flex-col justify-center items-center min-w-[140px] text-center gap-2">
-                                        {/* Removed Number Badge Here */}
                                         <div>
                                             <div className="text-xs text-gray-500 font-bold uppercase mb-1">예상 균형 점수</div>
                                             <div className="text-2xl font-black text-indigo-700">{sug.predictedScore}</div>
