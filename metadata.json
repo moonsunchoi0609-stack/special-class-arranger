@@ -1,0 +1,5 @@
+{
+  "name": "특수학교 반편성 도우미 (Special Class Arranger)",
+  "description": "학생들의 특성과 분리 배정 요건을 고려하여 효율적인 반 편성을 돕는 직관적인 드래그 앤 드롭 웹 애플리케이션입니다.",
+  "requestFramePermissions": []
+}
