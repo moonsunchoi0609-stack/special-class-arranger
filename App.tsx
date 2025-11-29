@@ -663,7 +663,7 @@ function App() {
                     </div>
 
                     {/* Class Columns */}
-                    <div className="flex-1 w-full h-full overflow-x-auto pb-2 pl-2 border-l border-gray-200 min-w-0">
+                    <div className="flex-1 h-full overflow-x-auto pb-2 pl-2 border-l border-gray-200 min-w-0 pr-2">
                         <div className="flex gap-4 h-full">
                             {classList.map(classId => (
                                 <div key={classId} className="w-72 h-full flex-shrink-0">
