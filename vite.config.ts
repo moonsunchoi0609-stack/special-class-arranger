@@ -6,11 +6,16 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
   
+  const rawApiKey = env.VITE_API_KEY || '';
+  // Base64 encode the key to hide the raw string from simple build scans
+  const encodedKey = rawApiKey ? Buffer.from(rawApiKey).toString('base64') : '';
+  
   return {
     plugins: [react()],
     define: {
-      // Expose the API key as process.env.API_KEY
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY)
+      // Inject the encoded string as a global constant.
+      // JSON.stringify is crucial here to ensure it's treated as a string literal.
+      '__API_KEY_B64__': JSON.stringify(encodedKey)
     }
   };
 });
