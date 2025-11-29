@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
     Plus, Settings, Wand2, Download,
@@ -434,8 +433,7 @@ function App() {
       classCount,
       students,
       tags,
-      includeStats,
-      aiAnalysis
+      includeStats
     });
   };
 
@@ -489,7 +487,7 @@ function App() {
                     </button>
                 )}
                 <h2 className="font-bold text-gray-800 text-lg">
-                    {schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중등' : '고등'} 반편성 보드
+                    {schoolLevel === 'ELEMENTARY_MIDDLE' ? '초등/중학' : '고등'} 반편성 보드
                 </h2>
                 <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
                     전체 학생: {students.length}명

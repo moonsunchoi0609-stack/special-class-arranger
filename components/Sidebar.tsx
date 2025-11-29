@@ -268,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onChange={(e) => setIncludeStats(e.target.checked)}
                     className="rounded text-indigo-600 focus:ring-indigo-500"
                   />
-                  <label htmlFor="includeStats" className="text-xs text-gray-700 select-none cursor-pointer">분석 결과 포함</label>
+                  <label htmlFor="includeStats" className="text-xs text-gray-700 select-none cursor-pointer">통계/분석 포함</label>
                 </div>
                 <button 
                   onClick={onExportExcel}

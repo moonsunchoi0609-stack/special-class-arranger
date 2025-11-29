@@ -1,21 +1,18 @@
-
 import * as XLSX from 'xlsx';
-import { Student, TagDefinition, AiAnalysisResult } from '../types';
+import { Student, TagDefinition } from '../types';
 
 interface ExportOptions {
   classCount: number;
   students: Student[];
   tags: TagDefinition[];
   includeStats: boolean;
-  aiAnalysis: AiAnalysisResult | string | null;
 }
 
 export const exportToExcel = ({
   classCount,
   students,
   tags,
-  includeStats,
-  aiAnalysis
+  includeStats
 }: ExportOptions) => {
   // 한국어 가나다 순 정렬 함수
   const koreanSort = (a: Student, b: Student) => {
@@ -120,38 +117,6 @@ export const exportToExcel = ({
     statsSheet['!cols'] = statsCols;
 
     XLSX.utils.book_append_sheet(workbook, statsSheet, '반별 통계 분석');
-
-    // 3. 시트3: AI 분석 결과 (aiAnalysis가 있을 때만)
-    if (aiAnalysis) {
-      let analysisText = "";
-
-      if (typeof aiAnalysis === 'string') {
-        // 기존 텍스트 포맷 처리 (Bold 제거)
-        analysisText = aiAnalysis.replace(/\*\*(.*?)\*\*/g, '$1');
-      } else {
-        // 구조화된 데이터 객체 처리 -> 텍스트로 변환
-        analysisText += `[종합 점수]: ${aiAnalysis.overallScore}점\n`;
-        analysisText += `[종합 평가]: ${aiAnalysis.overallComment}\n\n`;
-        
-        analysisText += `[상세 분석]\n`;
-        aiAnalysis.classes.forEach(c => {
-          analysisText += `${c.classId}반 (난이도: ${c.riskScore}, 균형: ${c.balanceScore}): ${c.comment}\n`;
-        });
-        
-        analysisText += `\n[제안 사항]\n`;
-        aiAnalysis.recommendations.forEach((rec, i) => {
-          analysisText += `${i+1}. ${rec}\n`;
-        });
-      }
-
-      const formattedAnalysis = analysisText.split('\n').map(line => [line]);
-      const analysisSheet = XLSX.utils.aoa_to_sheet(formattedAnalysis);
-
-      // 열 너비 조정 (가독성 향상)
-      analysisSheet['!cols'] = [{ wch: 120 }];
-
-      XLSX.utils.book_append_sheet(workbook, analysisSheet, 'AI 분석 결과');
-    }
   }
 
   // 파일 다운로드

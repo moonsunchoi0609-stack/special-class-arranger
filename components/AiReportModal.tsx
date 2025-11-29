@@ -1,24 +1,20 @@
-
 import React from 'react';
-import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, User } from 'lucide-react';
+import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar 
 } from 'recharts';
 import { AiAnalysisResult, Student, TagDefinition } from '../types';
-import { maskName } from '../services/geminiService';
-import { TagBadge } from './TagBadge';
 
 interface AiReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   analysisResult: AiAnalysisResult | string | null;
-  students?: Student[]; // Added for looking up student details in suggestions
-  tags?: TagDefinition[]; // Added for looking up tags
+  students?: Student[];
+  tags?: TagDefinition[];
 }
 
-export const AiReportModal: React.FC<AiReportModalProps> = ({ 
-  isOpen, onClose, analysisResult, students = [], tags = [] 
-}) => {
+export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, analysisResult, students, tags }) => {
   if (!isOpen || !analysisResult) return null;
 
   // Render Logic for String (Fallback/Error)
@@ -60,7 +56,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
   }
 
   // Render Logic for Structured Data
-  const { overallScore, overallComment, classes, recommendations, suggestedMoves, predictedScore } = analysisResult;
+  const { overallScore, overallComment, classes, recommendations } = analysisResult;
 
   // Chart Data Preparation
   const barChartData = classes.map(c => ({
@@ -69,15 +65,11 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
     Balance: c.balanceScore
   }));
 
-  // Helper to find student info for suggested moves
-  const findStudentInfo = (name: string) => {
-      // Try exact match first
-      let student = students.find(s => s.name === name);
-      // If masked name provided by AI, try to match by masked name
-      if (!student) {
-          student = students.find(s => maskName(s.name) === name);
-      }
-      return student;
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (score >= 40) return 'text-amber-600 bg-amber-50 border-amber-200';
+    return 'text-red-600 bg-red-50 border-red-200';
   };
 
   return (
@@ -101,7 +93,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
             {/* Top Section: Overall Score & Comment */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Score Card */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center relative overflow-hidden group">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
                     <h3 className="text-gray-500 font-medium mb-2 uppercase tracking-wide text-xs">전체 균형 점수</h3>
                     <div className="relative flex items-center justify-center">
@@ -122,12 +114,6 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                             <span className="text-xs text-gray-400">/ 100</span>
                         </div>
                     </div>
-                    {predictedScore && predictedScore > overallScore && (
-                        <div className="absolute bottom-2 right-2 flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full animate-pulse">
-                            <TrendingUp size={12} />
-                            예측: {predictedScore}점 (+{predictedScore - overallScore})
-                        </div>
-                    )}
                 </div>
 
                 {/* Comment Card */}
@@ -141,65 +127,6 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                      </p>
                 </div>
             </div>
-            
-            {/* Suggested Moves Section (New Visual Comparison) */}
-            {suggestedMoves && suggestedMoves.length > 0 && (
-                <div className="mb-8">
-                     <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2 px-1 text-lg">
-                        <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                        ✨ 최적화를 위한 AI 제안 (Before &rarr; After)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {suggestedMoves.map((move, idx) => {
-                            const studentInfo = findStudentInfo(move.studentName);
-                            const studentTags = studentInfo ? tags.filter(t => studentInfo.tagIds.includes(t.id)) : [];
-                            
-                            return (
-                                <div key={idx} className="bg-white rounded-xl shadow-sm border border-green-100 overflow-hidden hover:shadow-md transition-shadow">
-                                    <div className="p-4 bg-green-50/30 flex justify-between items-start">
-                                        <div className="flex items-start gap-3">
-                                            <div className="bg-white p-2 rounded-full border border-green-200 text-green-600 shadow-sm">
-                                                <User size={20} />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                                                    {move.studentName}
-                                                    {studentInfo?.gender && (
-                                                        <span className={`text-xs px-1.5 py-0.5 rounded ${studentInfo.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                            {studentInfo.gender === 'male' ? '남' : '여'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-wrap gap-1 mt-1.5">
-                                                    {studentTags.map(tag => (
-                                                        <TagBadge key={tag.id} tag={tag} className="text-[10px] px-1.5 py-0.5" />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 pt-2">
-                                        <div className="flex items-center gap-4 my-3">
-                                             <div className="flex-1 text-center p-2 bg-gray-100 rounded-lg text-gray-500 font-medium text-sm">
-                                                 {move.currentClass === '미배정' || !move.currentClass ? '미배정' : `${move.currentClass}반`}
-                                             </div>
-                                             <div className="text-green-500">
-                                                 <ArrowRight size={20} strokeWidth={3} />
-                                             </div>
-                                             <div className="flex-1 text-center p-2 bg-green-100 text-green-700 rounded-lg font-bold text-sm border border-green-200">
-                                                 {move.targetClass}반
-                                             </div>
-                                        </div>
-                                        <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-100">
-                                            💡 {move.reason}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
 
             {/* Middle Section: Charts & Recommendations */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -232,7 +159,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
                     <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
                         <div className="w-1 h-5 bg-amber-500 rounded-full"></div>
-                        일반 제안 사항
+                        AI 제안 사항
                     </h3>
                     <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-64 custom-scrollbar">
                         {recommendations.map((rec, idx) => (
@@ -273,7 +200,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
             </div>
 
             <div className="mt-8 text-center text-xs text-gray-400">
-                ※ 본 분석 결과는 AI에 의해 생성되었으며, 참고용으로만 활용해 주시기 바랍니다.
+                ※ 본 분석 결과는 AI에 의해 생성되었으며, 참고용으로만 활용해 주시기 바랍니다. 최종 결정은 학교의 상황을 고려하여 진행해 주세요.
             </div>
         </div>
         

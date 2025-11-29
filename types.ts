@@ -37,18 +37,9 @@ export interface ClassAnalysisData {
   comment: string;
 }
 
-export interface SuggestedMove {
-  studentName: string;
-  currentClass: string;
-  targetClass: string;
-  reason: string;
-}
-
 export interface AiAnalysisResult {
   overallScore: number;
   overallComment: string;
   classes: ClassAnalysisData[];
   recommendations: string[];
-  suggestedMoves?: SuggestedMove[];
-  predictedScore?: number;
 }

@@ -4,7 +4,7 @@ import { Student, TagDefinition, SeparationRule, SchoolLevel, AiAnalysisResult }
 import { MAX_CAPACITY } from '../constants';
 
 // 이름 마스킹 헬퍼 함수
-export const maskName = (name: string): string => {
+const maskName = (name: string): string => {
   if (!name) return '';
   if (name.length <= 1) return name;
   if (name.length === 2) return name[0] + '○';
@@ -70,33 +70,15 @@ export const analyzeClasses = async (
       recommendations: {
         type: Type.ARRAY,
         items: { type: Type.STRING },
-        description: "전반적인 개선 제안 사항 (텍스트)"
-      },
-      suggestedMoves: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            studentName: { type: Type.STRING, description: "이동 대상 학생의 이름 (제공된 이름 그대로 사용)" },
-            currentClass: { type: Type.STRING, description: "현재 반 (미배정인 경우 '미배정')" },
-            targetClass: { type: Type.STRING, description: "이동할 목표 반" },
-            reason: { type: Type.STRING, description: "이동 제안 사유" }
-          },
-          required: ["studentName", "currentClass", "targetClass", "reason"]
-        },
-        description: "균형을 맞추기 위해 구체적으로 이동이 필요한 학생들의 목록 (최적화 제안)"
-      },
-      predictedScore: {
-        type: Type.NUMBER,
-        description: "제안된 이동을 모두 수행했을 때 예상되는 전체 균형 점수"
+        description: "개선이 필요한 구체적인 제안 사항들 (미배정 학생 배치 제안 포함)."
       }
     },
-    required: ["overallScore", "overallComment", "classes", "recommendations", "suggestedMoves"]
+    required: ["overallScore", "overallComment", "classes", "recommendations"]
   };
 
   let prompt = `
     당신은 특수학교 반편성 전문가입니다.
-    현재 반 편성 상황을 분석하고, 만약 개선이 필요하다면 구체적인 학생 이동 제안을 포함한 리포트를 JSON 형식으로 제공해주세요.
+    현재 반 편성 상황을 분석하고 JSON 형식으로 구조화된 리포트를 제공해주세요.
 
     **설정 정보:**
     - 학교 급: ${schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중학교 (정원 6명)' : '고등학교 (정원 7명)'}
@@ -104,12 +86,12 @@ export const analyzeClasses = async (
     - 반 정원 제한: ${limit}명
 
     **특성 Tag 해석 가이드 (중요):**
-    1. **부담 가중 요소 (Risk Factors)**: '공격성', '화장실지원', '보행지원', '휠체어', '학부모예민', '분쇄식' 등 -> 교사의 지도 부담을 높임. 특정 반에 몰리면 안 됨.
-    2. **부담 경감 요소**: '잦은결석', '교사보조가능' -> 지도 부담을 다소 완화해줌.
-    3. **목표**: 
-       - 모든 반의 Risk Score를 비슷하게 유지 (특정 반 희생 금지)
-       - 성별 균형 (남/녀 비율) 고려
-       - '분리 배정 규칙' 준수 필수
+    1. **부담 경감 요소**: '잦은결석', '교사보조가능' -> 지도 부담을 **줄여주는** 요인.
+    2. **부담 가중 요소**: '공격성', '화장실지원', '보행지원', '휠체어', '학부모예민', '분쇄식' 등 -> 지도 부담을 **높이는** 요인.
+    3. **분석 기준**: 
+       - 부담 가중 요소가 특정 반에 쏠리지 않았는지 (Risk Score 반영)
+       - 성별 및 성향이 고르게 분포되었는지 (Balance Score 반영)
+       - 미배정 학생이 있다면 적절한 배치 제안
 
     **현재 편성 현황:**
     ${Object.entries(classesMap).map(([classId, classStudents]) => {
@@ -131,8 +113,7 @@ export const analyzeClasses = async (
     **미배정 학생:**
     ${unassigned.map(s => {
         const genderStr = s.gender === 'female' ? '여' : (s.gender === 'male' ? '남' : '');
-        const tagsStr = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-        return `${maskName(s.name)}${genderStr ? `(${genderStr})` : ''}[${tagsStr}]`;
+        return `${maskName(s.name)}${genderStr ? `(${genderStr})` : ''}`;
     }).join(', ') || '없음'}
 
     **분리 배정 규칙(서로 같은 반이 되면 안됨):**
@@ -141,12 +122,10 @@ export const analyzeClasses = async (
         return `${idx + 1}. ${names}`;
     }).join('\n') || '없음'}
 
-    **요청 사항:**
-    1. 현재 상태의 점수(overallScore)와 반별 점수를 계산하세요.
-    2. 만약 불균형이 심하거나 미배정 학생이 있다면, **suggestedMoves** 배열에 구체적인 이동/배정 제안을 담아주세요.
-       - 예: "홍○동 학생을 1반에서 2반으로 이동 (2반의 휠체어 학생 부담을 분산하기 위함)"
-       - 미배정 학생이 있다면 적절한 반으로 배정하는 제안을 포함하세요.
-    3. 제안된 이동을 적용했을 때 예상되는 **predictedScore**를 예측해주세요.
+    **필수 요청 사항:**
+    1. Risk Score: 0~100점. 공격성이나 지원 요구가 많은 학생이 몰릴수록 높게 책정.
+    2. Balance Score: 0~100점. 성비, 학생 수, 성향이 골고루 섞일수록 높게 책정.
+    3. recommendations: 구체적인 학생 이동 제안이나 주의사항.
   `;
 
   try {
