@@ -66,7 +66,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                 <div>
                   <h4 className="font-bold text-gray-900 text-base mb-1">분석 및 결과 저장</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    상단 <strong>AI 분석</strong> 기능을 통해 반별 균형 및 특성 분포에 대한 전문적인 피드백을 확인할 수 있습니다.(1분 가량 소요)<br/>
+                    <strong>AI 분석</strong> 기능을 통해 반별 균형 및 특성 분포에 대한 전문적인 피드백을 확인할 수 있습니다.(1분 가량 소요)<br/>
                     편성이 완료되면 <strong>Excel 저장</strong> 버튼을 사용하여 결과 보고서를 다운로드합니다.
                   </p>
                 </div>

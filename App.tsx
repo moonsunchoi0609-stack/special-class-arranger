@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
     Plus, Settings, Wand2, Download,
@@ -7,7 +8,7 @@ import {
 } from 'lucide-react';
 
 import { 
-    Student, TagDefinition, SchoolLevel, SeparationRule, AppState 
+    Student, TagDefinition, SchoolLevel, SeparationRule, AppState, AiAnalysisResult 
 } from './types';
 import { 
     INITIAL_TAGS, TAG_COLORS, UNASSIGNED_ID, MAX_CAPACITY
@@ -53,8 +54,8 @@ function App() {
   // Export State
   const [includeStats, setIncludeStats] = useState(false);
 
-  // AI Analysis
-  const [aiAnalysis, setAiAnalysis] = useState<string>("");
+  // AI Analysis - Now supports structured data
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysisResult | string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // --- PERSISTENCE ---
@@ -299,6 +300,7 @@ function App() {
           setStudents([]);
           setSeparationRules([]);
           setTags(INITIAL_TAGS);
+          setAiAnalysis(null);
       }
   };
 
@@ -356,6 +358,7 @@ function App() {
     setStudents(generatedStudents);
     setSeparationRules([]);
     setTags(INITIAL_TAGS); 
+    setAiAnalysis(null);
     
     alert(`현재 설정(${schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중등' : '고등'}, ${classCount}학급)에 맞춰 ${totalCount}명의 샘플 데이터가 생성되었습니다.`);
   };
@@ -406,6 +409,7 @@ function App() {
                   
                   setTags(json.tags || INITIAL_TAGS);
                   setSeparationRules(json.separationRules || []);
+                  setAiAnalysis(null);
                   alert("성공적으로 불러왔습니다.");
               }
           } catch (error) {
@@ -418,7 +422,7 @@ function App() {
 
   const handleAIAnalyze = async () => {
       setIsAnalyzing(true);
-      setAiAnalysis("");
+      // setAiAnalysis(null); // Optional: clear previous result while loading
       const result = await analyzeClasses(students, tags, separationRules, classCount, schoolLevel);
       setAiAnalysis(result);
       setIsAnalyzing(false);

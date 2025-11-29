@@ -1,6 +1,6 @@
 
-import { GoogleGenAI } from "@google/genai";
-import { Student, TagDefinition, SeparationRule, SchoolLevel } from '../types';
+import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { Student, TagDefinition, SeparationRule, SchoolLevel, AiAnalysisResult } from '../types';
 import { MAX_CAPACITY } from '../constants';
 
 // 이름 마스킹 헬퍼 함수
@@ -18,7 +18,7 @@ export const analyzeClasses = async (
   rules: SeparationRule[],
   classCount: number,
   schoolLevel: SchoolLevel
-): Promise<string> => {
+): Promise<AiAnalysisResult | string> => {
   // Decode the API key at runtime using the browser's atob function
   const apiKey = typeof __API_KEY_B64__ !== 'undefined' && __API_KEY_B64__ ? atob(__API_KEY_B64__) : '';
 
@@ -36,9 +36,49 @@ export const analyzeClasses = async (
   const unassigned = students.filter(s => !s.assignedClassId);
   const limit = MAX_CAPACITY[schoolLevel];
 
+  // Define Schema for structured output
+  const responseSchema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      overallScore: {
+        type: Type.NUMBER,
+        description: "전체적인 반 편성 균형 점수 (0~100점). 높을수록 좋음."
+      },
+      overallComment: {
+        type: Type.STRING,
+        description: "전체적인 편성 상태에 대한 종합적인 평가 및 총평 (3~4문장)."
+      },
+      classes: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            classId: { type: Type.STRING, description: "반 번호 (예: '1')" },
+            riskScore: { 
+              type: Type.NUMBER, 
+              description: "해당 반의 지도 난이도/위험도 점수 (0~100점). 높을수록 교사의 부담이 크고 위험함." 
+            },
+            balanceScore: { 
+              type: Type.NUMBER, 
+              description: "해당 반의 구성원 조화 및 균형 점수 (0~100점). 높을수록 좋음." 
+            },
+            comment: { type: Type.STRING, description: "해당 반에 대한 상세 분석 코멘트." }
+          },
+          required: ["classId", "riskScore", "balanceScore", "comment"]
+        }
+      },
+      recommendations: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "개선이 필요한 구체적인 제안 사항들 (미배정 학생 배치 제안 포함)."
+      }
+    },
+    required: ["overallScore", "overallComment", "classes", "recommendations"]
+  };
+
   let prompt = `
-    당신은 특수학교 교사들을 돕는 반편성 전문가입니다.
-    현재 반 편성 상황을 분석하고 조언을 해주세요.
+    당신은 특수학교 반편성 전문가입니다.
+    현재 반 편성 상황을 분석하고 JSON 형식으로 구조화된 리포트를 제공해주세요.
 
     **설정 정보:**
     - 학교 급: ${schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중학교 (정원 6명)' : '고등학교 (정원 7명)'}
@@ -46,12 +86,12 @@ export const analyzeClasses = async (
     - 반 정원 제한: ${limit}명
 
     **특성 Tag 해석 가이드 (중요):**
-    1. **부담 경감 요소**: '잦은결석', '교사보조가능' Tag를 가진 학생은 교사의 실질적인 지도 부담을 **줄여주는** 요인으로 간주하세요. 
-       - '잦은결석': 출석률이 낮아 실질적으로 관리하는 학생 수가 줄어드는 효과가 있습니다.
-       - '교사보조가능': 교사의 지시를 잘 따르거나 또래 도움을 줄 수 있어 학급 운영에 도움이 됩니다.
-       - 따라서, 이 Tag를 가진 학생들은 행동 중재가 많이 필요한 학생(공격성 등)이 있는 반에 배치하여 균형을 맞추는 것이 좋습니다.
-    2. **부담 가중 요소**: 그 외의 Tag(예: '공격성', '화장실지원', '보행지원', '휠체어', '학부모예민', '분쇄식' 등)는 교사의 물리적, 심리적 지원이 많이 필요한 요소입니다. 한 반에 과도하게 몰리지 않도록 해야 합니다.
-    3. **성별 균형**: 학생들의 성별 정보가 있는 경우, 각 반의 남녀 성비가 고르게 분포되는 것이 좋습니다. (성별 미입력 학생은 고려하지 않음)
+    1. **부담 경감 요소**: '잦은결석', '교사보조가능' -> 지도 부담을 **줄여주는** 요인.
+    2. **부담 가중 요소**: '공격성', '화장실지원', '보행지원', '휠체어', '학부모예민', '분쇄식' 등 -> 지도 부담을 **높이는** 요인.
+    3. **분석 기준**: 
+       - 부담 가중 요소가 특정 반에 쏠리지 않았는지 (Risk Score 반영)
+       - 성별 및 성향이 고르게 분포되었는지 (Balance Score 반영)
+       - 미배정 학생이 있다면 적절한 배치 제안
 
     **현재 편성 현황:**
     ${Object.entries(classesMap).map(([classId, classStudents]) => {
@@ -62,13 +102,10 @@ export const analyzeClasses = async (
       학생들: ${classStudents.map(s => {
         const tagsStr = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
         const genderStr = s.gender === 'female' ? '여' : (s.gender === 'male' ? '남' : '');
-        
-        let infoParts = [];
-        if (genderStr) infoParts.push(genderStr);
-        if (tagsStr) infoParts.push(tagsStr);
-        
-        const info = infoParts.join(', ');
-        return `${maskName(s.name)}${info ? `(${info})` : ''}`;
+        let info = [];
+        if(genderStr) info.push(genderStr);
+        if(tagsStr) info.push(tagsStr);
+        return `${maskName(s.name)}(${info.join(', ')})`;
       }).join(' / ')}
     `;
     }).join('\n')}
@@ -85,26 +122,10 @@ export const analyzeClasses = async (
         return `${idx + 1}. ${names}`;
     }).join('\n') || '없음'}
 
-    **서식 및 톤앤매너 가이드:**
-    - **가독성**: 분석 결과 출력 시 **마크다운 볼드체(**)**를 과도하게 사용하지 마세요. 
-      - 학생 수, 핵심적인 균형 문제, 중요한 제안 사항 등 **정말 강조가 필요한 키워드**에만 **굵은 글씨**를 사용하세요.
-      - 문장 전체나 모든 항목 제목을 볼드 처리하는 것은 피해주세요.
-    - **특수기호**: 별표(*) 기호는 목록형 스타일(bullet point) 외에는 텍스트 강조용으로 사용하지 마세요. 
-    - 어조: 정중하고 부드러운 한국어 경어체를 사용하세요.
-
-    **요청 사항:**
-    1. 각 반의 **'실질적인 지도 난이도'**의 균형이 맞는지 확인하세요. (학생 수는 무조건 정원에 맞춰지므로 **학생 수 균형은 고려하지 마세요**. 오직 '부담 경감/가중 요소'를 바탕으로 한 업무 강도 균형만 판단하세요.)
-    2. 특정 반에 부담 가중 요소(예: 공격성, 휠체어 등)가 과도하게 몰려 교사의 부담이 크지 않은지 확인하세요.
-    3. **성별 균형**이 적절한지 확인하고, 심각한 불균형이 있다면 지적해주세요. (성별 미입력 시 생략)
-    4. 분리 배정 규칙 위반 여부를 다시 한 번 체크하세요.
-    5. 미배정 학생이 있다면 어디로 배치하는 것이 좋을지 제안하세요.
-    6. **종합 분석 및 제안**: 다음 형식에 맞춰 작성해 주세요.
-       - **전체적인 개선 제안**: 현재 편성의 문제점과 해결 방안을 3~4문장으로 요약
-       - **제안된 편성안 상세 분석**:
-         - **개선 효과**: 제안대로 변경 시 예상되는 긍정적 효과 (예: 교사 부담 완화, 성비 균형 개선 등)
-         - **잔여 과제**: 여전히 해결되지 않거나 주의가 필요한 부분
-    7. 답변 시 학생 이름은 마스킹된 상태 그대로(예: 홍○동) 언급해 주세요.
-    8. **필수**: 답변의 맨 마지막 줄에 반드시 "※ 본 분석 결과는 참고용이며, 최종 결정은 학교의 상황을 고려하여 진행해 주시기 바랍니다."라는 문구를 포함하세요.
+    **필수 요청 사항:**
+    1. Risk Score: 0~100점. 공격성이나 지원 요구가 많은 학생이 몰릴수록 높게 책정.
+    2. Balance Score: 0~100점. 성비, 학생 수, 성향이 골고루 섞일수록 높게 책정.
+    3. recommendations: 구체적인 학생 이동 제안이나 주의사항.
   `;
 
   try {
@@ -112,12 +133,18 @@ export const analyzeClasses = async (
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
-        responseMimeType: 'text/plain',
+        responseMimeType: 'application/json',
+        responseSchema: responseSchema,
       }
     });
     
     if (response.text) {
-        return response.text;
+        try {
+            return JSON.parse(response.text) as AiAnalysisResult;
+        } catch (e) {
+            console.error("JSON Parsing Error", e);
+            return response.text; // Fallback to raw text if parsing fails
+        }
     }
     return "분석 결과를 생성할 수 없습니다.";
   } catch (error: any) {
@@ -125,14 +152,12 @@ export const analyzeClasses = async (
     
     const errorMessage = error.message || String(error);
 
-    // Handle API Key Referrer Restriction (403)
     if (errorMessage.includes("API_KEY_HTTP_REFERRER_BLOCKED") || 
         errorMessage.includes("Requests from referer") ||
         (errorMessage.includes("403") && errorMessage.includes("blocked"))) {
       return `🚫 **API 키 설정 오류**\n\n현재 도메인(Referer)이 API 키 허용 목록에 포함되지 않았습니다.\nGoogle Cloud Console 또는 AI Studio에서 API 키 설정을 확인하고, 현재 도메인 주소를 추가해주세요.`;
     }
 
-    // Handle Quota Exceeded (429)
     if (errorMessage.includes("429") || errorMessage.includes("Quota") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
       return `⚠️ **API 사용량 초과**\n\n잠시 후 다시 시도해 주세요. (Quota Exceeded)`;
     }

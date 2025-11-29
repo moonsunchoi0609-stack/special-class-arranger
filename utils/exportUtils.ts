@@ -1,12 +1,13 @@
+
 import * as XLSX from 'xlsx';
-import { Student, TagDefinition } from '../types';
+import { Student, TagDefinition, AiAnalysisResult } from '../types';
 
 interface ExportOptions {
   classCount: number;
   students: Student[];
   tags: TagDefinition[];
   includeStats: boolean;
-  aiAnalysis: string;
+  aiAnalysis: AiAnalysisResult | string | null;
 }
 
 export const exportToExcel = ({
@@ -122,13 +123,29 @@ export const exportToExcel = ({
 
     // 3. 시트3: AI 분석 결과 (aiAnalysis가 있을 때만)
     if (aiAnalysis) {
-      // AI 분석 결과를 텍스트로 변환 (마크다운 볼드 제거)
-      const formattedAnalysis = aiAnalysis
-        .replace(/\*\*(.*?)\*\*/g, '$1') // Bold 제거
-        .split('\n'); // 줄바꿈으로 분리
+      let analysisText = "";
 
-      const analysisData = formattedAnalysis.map(line => [line]);
-      const analysisSheet = XLSX.utils.aoa_to_sheet(analysisData);
+      if (typeof aiAnalysis === 'string') {
+        // 기존 텍스트 포맷 처리 (Bold 제거)
+        analysisText = aiAnalysis.replace(/\*\*(.*?)\*\*/g, '$1');
+      } else {
+        // 구조화된 데이터 객체 처리 -> 텍스트로 변환
+        analysisText += `[종합 점수]: ${aiAnalysis.overallScore}점\n`;
+        analysisText += `[종합 평가]: ${aiAnalysis.overallComment}\n\n`;
+        
+        analysisText += `[상세 분석]\n`;
+        aiAnalysis.classes.forEach(c => {
+          analysisText += `${c.classId}반 (난이도: ${c.riskScore}, 균형: ${c.balanceScore}): ${c.comment}\n`;
+        });
+        
+        analysisText += `\n[제안 사항]\n`;
+        aiAnalysis.recommendations.forEach((rec, i) => {
+          analysisText += `${i+1}. ${rec}\n`;
+        });
+      }
+
+      const formattedAnalysis = analysisText.split('\n').map(line => [line]);
+      const analysisSheet = XLSX.utils.aoa_to_sheet(formattedAnalysis);
 
       // 열 너비 조정 (가독성 향상)
       analysisSheet['!cols'] = [{ wch: 120 }];

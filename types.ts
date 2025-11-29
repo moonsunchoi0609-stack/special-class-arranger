@@ -28,3 +28,18 @@ export interface AppState {
   tags: TagDefinition[];
   separationRules: SeparationRule[];
 }
+
+// AI Analysis Types
+export interface ClassAnalysisData {
+  classId: string;
+  riskScore: number; // 0-100 (Higher is riskier)
+  balanceScore: number; // 0-100 (Higher is better)
+  comment: string;
+}
+
+export interface AiAnalysisResult {
+  overallScore: number;
+  overallComment: string;
+  classes: ClassAnalysisData[];
+  recommendations: string[];
+}
